@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Category;
 use Illuminate\Http\Request;
 use App\Http\Requests\CreateCategoryRequest;
-use Carbon\Carbon;
+use Image;
 
 class CategoryController extends Controller
 {
@@ -40,47 +40,53 @@ class CategoryController extends Controller
      */
     public function store(CreateCategoryRequest $request)
     {
-        dd($request);
-        $newCategory = Category::create([
-            'name' => $request->input('name'),
-            'description' => $request->input('description')
-        ]);
-
-        if (!is_null($request->file('image'))) {
-            $image = $request->file('image');
-            $image_name = $newCategory->name . '-' . Carbon::new() . '.' . $image->getClientOriginalExtension();
-            $destination_path = public_path("category/100");
-
-            if (!file_exists($destination_path)) {
-                mkdir($destination_path, 0775, true);
-            }
-
-            $resize_image = Image::make($image->getRealPath());
-            $resize_image->resize(100, 100, function($constrained) {
-                $constrained->aspectRatio();
-            })->save($destination_path . '/' . $image_name);
-
-            $destination_path = public_path("category/150");
-            if (!file_exists($destination_path)) {
-                mkdir($destination_path, 0775, true);
-            }
-            $resize_image = Image::make($image->getRealPath());
-            $resize_image->resize(512, 512, function($constrained) {
-                $constrained->aspectRatio();
-            })->save($destination_path . '/' . $image_name);
-
-            $destination_path = public_path("category/1280");
-            if (!file_exists($destination_path)) {
-                mkdir($destination_path, 0775, true);
-            }
-            $resize_image = Image::make($image->getRealPath());
-            $resize_image->resize(1024, 1024, function($constrained) {
-                $constrained->aspectRatio();
-            })->save($destination_path . '/' . $image_name);
-
-            $newCategory->update([
-                'image' => $image_name,
+        try {
+            $newCategory = Category::create([
+                'name' => $request->input('name'),
+                'slug' => $request->input('slug'),
+                'description' => $request->input('description')
             ]);
+
+            if (!is_null($request->file('image'))) {
+                $image = $request->file('image');
+                $image_name = $newCategory->name . '.' . $image->getClientOriginalExtension();
+                $destination_path = public_path("category/100");
+
+                if (!file_exists($destination_path)) {
+                    mkdir($destination_path, 0775, true);
+                }
+
+                $resize_image = Image::make($image->getRealPath());
+                $resize_image->resize(100, 100, function($constrained) {
+                    $constrained->aspectRatio();
+                })->save($destination_path . '/' . $image_name);
+
+                $destination_path = public_path("category/150");
+                if (!file_exists($destination_path)) {
+                    mkdir($destination_path, 0775, true);
+                }
+                $resize_image = Image::make($image->getRealPath());
+                $resize_image->resize(512, 512, function($constrained) {
+                    $constrained->aspectRatio();
+                })->save($destination_path . '/' . $image_name);
+
+                $destination_path = public_path("category/1280");
+                if (!file_exists($destination_path)) {
+                    mkdir($destination_path, 0775, true);
+                }
+                $resize_image = Image::make($image->getRealPath());
+                $resize_image->resize(1024, 1024, function($constrained) {
+                    $constrained->aspectRatio();
+                })->save($destination_path . '/' . $image_name);
+
+                $newCategory->update([
+                    'imagen' => $image_name,
+                ]);
+            }
+            
+            return response()->json(['message' => 'success'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()]);
         }
     }
 
@@ -103,7 +109,15 @@ class CategoryController extends Controller
      */
     public function edit(Category $category)
     {
-        //
+        try {
+            return response()->json([
+                'category' => $category
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
+            ], 401);
+        }
     }
 
     /**
@@ -126,6 +140,9 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        //
+        $category->delete();
+        unlink("category/100/{$category->imagen}");
+        unlink("category/150/{$category->imagen}");
+        unlink("category/1280/{$category->imagen}");
     }
 }

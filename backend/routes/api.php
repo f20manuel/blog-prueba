@@ -18,12 +18,21 @@ Route::post('login', 'UserController@login');
 Route::post('register', 'UserController@register');
 
 Route::get('/unauthorized', 'UserController@unauthorized');
-Route::group(['middleware' => ['CheckClientCredentials','auth:api']], function() {
+Route::group(['middleware' => ['cors', 'CheckClientCredentials','auth:api']], function() {
     Route::post('logout', 'UserController@logout');
     Route::post('details', 'UserController@details');
 
     Route::prefix('categories')->group(function () {
         Route::get('/', 'CategoryController@index');
         Route::post('/', 'CategoryController@store');
+        Route::get('/{category}/edit', 'CategoryController@edit');
+        Route::delete('/{category}', 'CategoryController@destroy');
+    });
+
+    Route::prefix('posts')->group(function () {
+        Route::get('/', 'PostController@index');
+        Route::post('/', 'PostController@store');
+        Route::get('/{post}/edit', 'PostController@edit');
+        Route::delete('/{post}', 'PostController@destroy');
     });
 });

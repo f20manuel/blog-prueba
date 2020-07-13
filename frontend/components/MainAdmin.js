@@ -40,6 +40,13 @@ export default function MainAdmin({ children, currentPage, breadcrumbs }) {
                             <Icon name='boxes' />
                             Categorías
                         </Menu.Item>
+                        <Menu.Item
+                            name="Categorías"
+                            active={currentPage === 'Entradas'}
+                            onClick={() => window.location.href = '/blog-admin/articulos'}>
+                            <Icon name='edit' />
+                            Entrada
+                        </Menu.Item>
                     </Sidebar>
     
                     <Sidebar.Pusher>

@@ -61,8 +61,9 @@ export default function index() {
                 </Head>
                 <Grid textAlign='center' style={{ height: '100vh' }} verticalAlign='middle'>
                     <Grid.Column style={{ maxWidth: 450 }}>
+                <Button floated="right" onClick={() => window.location.href = '/'}>Volver</Button>
                     <Header as='h2' color='teal' textAlign='center'>
-                        <Icon name='user' /> Log-in to your account
+                        <Icon name='user' /> Ingresa con tu cuenta
                     </Header>
                     <Form size='large'>
                         <Segment stacked>
@@ -94,12 +95,12 @@ export default function index() {
                             fluid
                             size='large'
                             onClick={() => sendData(data)}>
-                            Acceder
+                            Ingresar
                         </Button>
                         </Segment>
                     </Form>
                     <Message>
-                        New to us? <a href='#'>Sign Up</a>
+                        ¿No tienes cuenta? <a href='/register'>Crear cuenta</a>
                     </Message>
                     </Grid.Column>
                 </Grid>

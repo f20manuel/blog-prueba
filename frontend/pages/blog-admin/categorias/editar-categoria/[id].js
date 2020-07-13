@@ -1,17 +1,21 @@
 import React,{ useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 import MainAdmin from '../../../../components/MainAdmin'
 import Head from 'next/head'
 import { links } from '../../../../enviroment'
-import { Image, Popup, Card, Header, Form, Button } from 'semantic-ui-react'
+import { Image, Popup, Card, Header, Form, Button, Placeholder } from 'semantic-ui-react'
 import { urlObjectKeys } from 'next/dist/next-server/lib/utils'
 import Axios from 'axios'
-import { api, headersWithTokenAndFormData } from '../../../../helpers'
+import { api, headersWithTokenAndFormData, public_path } from '../../../../helpers'
 
 export default function index() {
+    const router = useRouter()
+    
     const [token, setToken] = useState('')
 
     const [loading, setLoading] = useState(false)
-    const [diabledButton, setDisabledButton] = useState(true)
+
+    const [category, setCategory] = useState('')
 
     useEffect(() => {
         const token = localStorage.getItem('accessToken')
@@ -28,8 +32,6 @@ export default function index() {
         description: '',
     })
 
-    const [slug, setSlug] = useState('')
-
     const [breadcrumbs, setBreadcrumbs] = useState([
         { key: 'escritorio', content: 'Escritorio', href: '/blog-admin'},
         { key: 'categorias', content: 'Categorías', href: '/blog-admin/categorias'},
@@ -37,7 +39,6 @@ export default function index() {
     ])
 
     const handleImage = event => {
-        setDisabledButton(false)
         const imagen = event.target.files[0]
 
         setImage(imagen)
@@ -45,15 +46,9 @@ export default function index() {
     }
 
     const handleChangeData = event => {
-        setDisabledButton(false)
-        if (event.target.name === 'name') {
-            const value = '/blog-admin/categorias/' + event.target.value
-            setSlug(value.replace(' ', '-').toLowerCase())
-        }
-
         setData({
             ...data,
-            [event.target.name]: event.target.value,
+            [event.target.name]: event.target.value
         })
     }
 
@@ -61,9 +56,8 @@ export default function index() {
         setLoading(true)
 
         const newFormData = new FormData()
-        newFormData.append('image', image)
+        newFormData.append('image', image, image.filename)
         newFormData.append('name', data.name)
-        newFormData.append('slug', slug)
         newFormData.append('description', data.description)
 
         console.log(newFormData)
@@ -91,10 +85,36 @@ export default function index() {
         })
     }
 
+    //placeholders
+    const placeholderImage = () => {
+        
+
+        if (category.imagen) {
+            setImageURL(public_path('category/100/' + category.imagen))
+            return (
+                <Popup content='Haga click para subir una imágen' trigger={
+                    <Image
+                        src={imageURL}
+                        as='a'
+                        size='medium'
+                        rounded
+                        href={void(0)}
+                    />
+                }/>
+            )
+        }
+
+        return (
+            <Placeholder style={{widht: 300, height: 300}}>
+                <Placeholder.Image/>
+            </Placeholder>
+        )
+    }
+
     return (
         <>
             <Head>
-                <title>Nueva categoría</title>
+                <title>Editar categoría {category.name || 'loading...'}</title>
                 <link rel="icon" href="/favicon.ico" />
                 {links.map((link, index) => (
                     <link key={index} rel="stylesheet" href={link.url} />
@@ -104,15 +124,7 @@ export default function index() {
                 <div className="row mx-0">
                     <div className="col-md-4">
                         <label htmlFor="input-image">
-                            <Popup content='Haga click para subir una imágen' trigger={
-                                <Image
-                                    src={imageURL}
-                                    as='a'
-                                    size='medium'
-                                    rounded
-                                    href={void(0)}
-                                />
-                            }/>
+                            {placeholderImage()}
                         </label>
                         <input
                             type="file"
@@ -128,17 +140,16 @@ export default function index() {
                                 <div className="d-flex justify-content-between align-items-center">
                                     <div>
                                         <Header as="h2">
-                                            Datos para la nueva categoría
+                                            Datos de {category.name}
                                         </Header>
                                     </div>
                                     <div>
                                         <Button
-                                            primary="true"
+                                            primary
                                             loading={loading}
-                                            disabled={diabledButton}
                                             onClick={() => sendData()}
                                         >
-                                            Guardar
+                                            Actualizar
                                         </Button>
                                     </div>
                                 </div>
@@ -157,19 +168,6 @@ export default function index() {
                                             name="name"
                                             onChange={event => handleChangeData(event)}
                                             required
-                                        />
-                                    </Form.Field>
-                                    <Form.Field>
-                                        <label htmlFor="slug">
-                                            Slug:
-                                        </label>
-                                        <input
-                                            value={slug}
-                                            type="text"
-                                            id="slug"
-                                            name="slug"
-                                            required
-                                            onChange={(event) => setSlug(event.target.value)}
                                         />
                                     </Form.Field>
                                     <Form.Field>

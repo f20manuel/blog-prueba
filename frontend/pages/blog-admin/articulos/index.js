@@ -14,8 +14,8 @@ export default function index() {
     const [columns, setColumns] = useState([
         { label: 'ID', field: 'id', width: 100 },
         { label: 'Imágen', field: 'image', width: 100 },
+        { label: 'Categoría', field: 'category', widht: 100},
         { label: 'Nombre', field: 'name', width: 200},
-        { label: 'Slug', field: 'slug', width: 300},
         { label: 'Descripción', field: 'description'},
         { label: 'Acciones', field: 'actions', width: 100 }
     ])
@@ -27,7 +27,7 @@ export default function index() {
 
     const [breadcrumbs, setBreadcrumbs] = useState([
         { key: 'escritorio', content: 'Escritorio', href: '/blog-admin'},
-        { key: 'categorias', content: 'Categorías', active: true},
+        { key: 'articulos', content: 'Artículos', active: true},
     ])
 
     useEffect(() => {
@@ -37,39 +37,41 @@ export default function index() {
         setToken(token)
     }, [])
 
-    useEffect(() => {        
-        const getCategories = async (token) => {
-            await Axios.get(api('categories'), {
+    useEffect(() => {
+        setLoading(true)
+        
+        const getPosts = async (token) => {
+            await Axios.get(api('posts'), {
                 headers: {
                     'Authorization': 'Bearer ' + token
                 }
             }).then(response => {
-                const categories = response.data.categories
-                if(categories) handleCategories(categories)
+                const posts = response.data.posts
+                if(posts) handleposts(posts)
+                setLoading(false)
             }).catch(error => console.log(error))
         }
 
-        if (token) getCategories(token)
+        if (token) getPosts(token)
     }, [token])
 
-    const handleCategories = (categories) => {
+    const handlePosts = (posts) => {
         const rows = []
-        if(categories) {
-            categories.forEach(category => {
+        if(posts) {
+            posts.forEach(post => {
                 rows.push({
-                    id: category.id,
-                    image: (<Image src={public_path('category/100/' + category.imagen)} avatar />),
-                    name: category.name,
-                    slug: category.slug,
-                    description: category.description,
+                    id: post.id,
+                    image: (<Image src={public_path('post/100/' + post.image)} avatar />),
+                    name: post.name,
+                    description: post.description,
                     actions: (
                         <Button.Group icon>
                             <Popup content='Editar' trigger={
-                                <Button primary="true" onClick={() => window.location.href = '/blog-admin/categorias/editar-categoria/' + category.id}>
+                                <Button primary="true" onClick={() => window.location.href = '/blog-admin/articulos/editar-articulo/' + post.id}>
                                     <Icon name='edit' />
                                 </Button>
                             }/>
-                            <Button loading={loading} onClick={() => deleteCategoryAsk(category.id)}>
+                            <Button>
                                 <Icon name='delete' />
                             </Button>
                         </Button.Group>
@@ -81,39 +83,19 @@ export default function index() {
         setDataTable({ columns: columns, rows: rows })
     }
 
-    const deleteCategory = async (id) => {
-        await Axios.post(api('categories/') + id, {
-            _method: 'DELETE'
-        }, {
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        }).then(response => {
-            alert('Categorías eliminada con éxito!')
-            setLoading(false)
-            window.location.reload()
-        }).catch(errors => console.log(errors))
-    }
-
-    const deleteCategoryAsk = (id) => {
-        const DELETE = confirm('¿Estas segur@ de que quieres eliminar esta categoría?')
-        setLoading(true)
-        if (DELETE) deleteCategory(id)
-    }
-
     return (
         <>
             <Head>
-                <title>Blog de prueba</title>
+                <title>Artículos - blog de prueba</title>
                 <link rel="icon" href="/favicon.ico" />
                 {links.map((link, index) => (
                     <link key={index} rel="stylesheet" href={link.url} />
                 ))}
             </Head>
-            <MainAdmin currentPage="Categorías" breadcrumbs={breadcrumbs}>
-                <Button className="mb-3" floated='right' primary onClick={() => window.location.href = '/blog-admin/categorias/nueva-categoria'}>
+            <MainAdmin currentPage="Artículos" breadcrumbs={breadcrumbs}>
+                <Button className="mb-3" floated='right' primary onClick={() => window.location.href = '/blog-admin/articulos/nuevo-articulo'}>
                     <Icon name="plus" />
-                    Nueva Categoría
+                    Nuevo artículo
                 </Button>
                 <Card className="w-100">
                     <Card.Content>

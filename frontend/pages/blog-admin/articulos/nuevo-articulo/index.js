@@ -21,19 +21,21 @@ export default function index() {
 
     const [image, setImage] = useState(null);
 
-    const [imageURL, setImageURL] = useState('https://via.placeholder.com/1024')
+    const [imageURL, setImageURL] = useState('https://via.placeholder.com/1280')
 
     const [data, setData] = useState({
-        name: '',
+        title: '',
+        category_id: '',
         description: '',
+        content: '',
     })
 
     const [slug, setSlug] = useState('')
 
     const [breadcrumbs, setBreadcrumbs] = useState([
         { key: 'escritorio', content: 'Escritorio', href: '/blog-admin'},
-        { key: 'categorias', content: 'Categorías', href: '/blog-admin/categorias'},
-        { key: 'nuevaCategoria', content: 'Nueva categoría', active: true},
+        { key: 'articulos', content: 'Articulos', href: '/blog-admin/articulos'},
+        { key: 'nuevoArticulo', content: 'Nuevo articulo', active: true},
     ])
 
     const handleImage = event => {
@@ -46,8 +48,8 @@ export default function index() {
 
     const handleChangeData = event => {
         setDisabledButton(false)
-        if (event.target.name === 'name') {
-            const value = '/blog-admin/categorias/' + event.target.value
+        if (event.target.name === 'title') {
+            const value = '/blog-admin/articulos/' + event.target.value
             setSlug(value.replace(' ', '-').toLowerCase())
         }
 
@@ -62,13 +64,15 @@ export default function index() {
 
         const newFormData = new FormData()
         newFormData.append('image', image)
-        newFormData.append('name', data.name)
+        newFormData.append('title', data.title)
+        newFormData.append('category_id', data.category_id)
         newFormData.append('slug', slug)
         newFormData.append('description', data.description)
+        newFormData.append('content', data.content)
 
         console.log(newFormData)
 
-        Axios.post(api('categories'), newFormData, {
+        Axios.post(api('posts'), newFormData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 'Accept': 'application/json',
@@ -77,8 +81,8 @@ export default function index() {
         }).then(response => {
             // console.log(response)
             setLoading(false)
-            alert('Categoría ' + data.name + ' agregada con éxito')
-            window.location.replace('/blog-admin/categorias')
+            alert('Artículo ' + data.title + ' agregado con éxito')
+            window.location.replace('/blog-admin/articulos')
         }).catch(error => {
             setLoading(false)
             console.log(error)
@@ -94,13 +98,13 @@ export default function index() {
     return (
         <>
             <Head>
-                <title>Nueva categoría</title>
+                <title>Nuevo artículo</title>
                 <link rel="icon" href="/favicon.ico" />
                 {links.map((link, index) => (
                     <link key={index} rel="stylesheet" href={link.url} />
                 ))}
             </Head>
-            <MainAdmin currentPage="Nueva categoría" breadcrumbs={breadcrumbs}>
+            <MainAdmin currentPage="Nuevo artículo" breadcrumbs={breadcrumbs}>
                 <div className="row mx-0">
                     <div className="col-md-4">
                         <label htmlFor="input-image">
@@ -128,7 +132,7 @@ export default function index() {
                                 <div className="d-flex justify-content-between align-items-center">
                                     <div>
                                         <Header as="h2">
-                                            Datos para la nueva categoría
+                                            Datos para el nuevo artículo
                                         </Header>
                                     </div>
                                     <div>
@@ -146,15 +150,15 @@ export default function index() {
                             <Card.Content>
                                 <Form>
                                     <Form.Field>
-                                        <label htmlFor="name">
-                                            Nombre:
+                                        <label htmlFor="title">
+                                            Título:
                                         </label>
                                         <input
-                                            value={data.name}
-                                            placeholder="Nombre para la nueva categoría"
+                                            value={data.title}
+                                            placeholder="Título para el nuevo artículo"
                                             type="text"
-                                            id="name"
-                                            name="name"
+                                            id="title"
+                                            name="title"
                                             onChange={event => handleChangeData(event)}
                                             required
                                         />
@@ -177,8 +181,9 @@ export default function index() {
                                             Descripción (opcional):
                                         </label>
                                         <textarea
+                                            rows={2}
                                             value={data.description}
-                                            placeholder="Describa aquí su buena categoría"
+                                            placeholder="Describa brevemente aquí su artículo"
                                             id="description"
                                             name="description"
                                             onChange={event => handleChangeData(event)}
