@@ -1,3 +1,5 @@
+export const root_url = 'http://localhost:3000'
+
 export const public_url = 'http://localhost:8000'
 
 export const api_url = public_url + '/api'

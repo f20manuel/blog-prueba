@@ -4,6 +4,7 @@ import Head from 'next/head'
 import { api } from '../../helpers'
 import { links } from '../../enviroment'
 import Axios from 'axios'
+import Router from 'next/router'
 
 export default function index() {
     const [token, setToken] = useState('')
@@ -37,8 +38,14 @@ export default function index() {
         }
         if (data.name !== '' && data.email !== '' && data.password !== '' && data.c_password !== '') {
             Axios.post(api('register'), data).then(response => {
-                localStorage.setItem('accessToken', response.data.accessToken)
-                window.location.href = '/blog-admin'
+                localStorage.setItem('accessToken', response.data.auth.accessToken)
+                const role = response.data.user.role
+                localStorage.setItem('role', role)
+                if (role === 'admin') {
+                    Router.replace('/blog-admin')
+                } else if (role === 'user') {
+                    Router.replace('/')
+                }
             }).catch(errors => {
                 console.log(errors.response)
                 const error = errors.response.data.error
@@ -54,11 +61,15 @@ export default function index() {
             alert('Los campos con "*" son obligatorios')
         }
     }
-
     useEffect(() => {
         const token = localStorage.getItem('accessToken')
+        const role = localStorage.getItem('role')
         setToken(token)
-        if(token) return window.location.replace('/blog-admin')
+        if (role === 'admin') {
+            Router.replace('/blog-admin')
+        } else if (role === 'user') {
+            Router.replace('/')
+        }
     }, [])
 
     const renderLogin = (token) => {
@@ -73,7 +84,7 @@ export default function index() {
                 </Head>
                 <Grid textAlign='center' style={{ height: '100vh' }} verticalAlign='middle'>
                     <Grid.Column style={{ maxWidth: 450 }}>
-                <Button floated="right" onClick={() => window.location.href = '/'}>Volver</Button>
+                <Button floated="right" onClick={() => Router.back()}>Volver</Button>
                     <Header as='h2' color='teal' textAlign='center'>
                         <Icon name='user' /> Crea tu cuenta
                     </Header>

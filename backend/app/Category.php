@@ -12,4 +12,9 @@ class Category extends Model
         'slug',
         'description',
     ];
+
+    public function posts(Request $request)
+    {
+        return $this->hasMany('App\Post');
+    }
 }

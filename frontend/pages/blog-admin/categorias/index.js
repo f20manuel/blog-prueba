@@ -7,15 +7,14 @@ import { links } from '../../../enviroment.js'
 import Head from 'next/head'
 import MainAdmin from '../../../components/MainAdmin.js'
 import { Container } from 'react-bootstrap'
+import Router from 'next/router'
 
 export default function index() {
-    const [token, setToken] = useState(null)
     const [loading, setLoading] = useState(false)
     const [columns, setColumns] = useState([
         { label: 'ID', field: 'id', width: 100 },
         { label: 'Imágen', field: 'image', width: 100 },
         { label: 'Nombre', field: 'name', width: 200},
-        { label: 'Slug', field: 'slug', width: 300},
         { label: 'Descripción', field: 'description'},
         { label: 'Acciones', field: 'actions', width: 100 }
     ])
@@ -34,10 +33,6 @@ export default function index() {
         const token = localStorage.getItem('accessToken')
         if (!token) window.location.href = '/login'
 
-        setToken(token)
-    }, [])
-
-    useEffect(() => {        
         const getCategories = async (token) => {
             await Axios.get(api('categories'), {
                 headers: {
@@ -50,7 +45,7 @@ export default function index() {
         }
 
         if (token) getCategories(token)
-    }, [token])
+    }, [])
 
     const handleCategories = (categories) => {
         const rows = []
@@ -60,7 +55,6 @@ export default function index() {
                     id: category.id,
                     image: (<Image src={public_path('category/100/' + category.imagen)} avatar />),
                     name: category.name,
-                    slug: category.slug,
                     description: category.description,
                     actions: (
                         <Button.Group icon>
@@ -82,6 +76,8 @@ export default function index() {
     }
 
     const deleteCategory = async (id) => {
+        const token = localStorage.getItem('accessToken')
+
         await Axios.post(api('categories/') + id, {
             _method: 'DELETE'
         }, {
@@ -91,7 +87,7 @@ export default function index() {
         }).then(response => {
             alert('Categorías eliminada con éxito!')
             setLoading(false)
-            window.location.reload()
+            Router.reload()
         }).catch(errors => console.log(errors))
     }
 

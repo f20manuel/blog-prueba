@@ -61,7 +61,7 @@ class CategoryController extends Controller
                     $constrained->aspectRatio();
                 })->save($destination_path . '/' . $image_name);
 
-                $destination_path = public_path("category/150");
+                $destination_path = public_path("category/512");
                 if (!file_exists($destination_path)) {
                     mkdir($destination_path, 0775, true);
                 }
@@ -75,7 +75,7 @@ class CategoryController extends Controller
                     mkdir($destination_path, 0775, true);
                 }
                 $resize_image = Image::make($image->getRealPath());
-                $resize_image->resize(1024, 1024, function($constrained) {
+                $resize_image->resize(1280, 1280, function($constrained) {
                     $constrained->aspectRatio();
                 })->save($destination_path . '/' . $image_name);
 
@@ -129,7 +129,53 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Category $category)
     {
-        //
+        $category->update([
+            'name' => $request->input('name'),
+            'slug' => $request->input('slug'),
+            'description' => $request->input('description'),
+        ]);
+
+        if ($request->file('image')) {
+            unlink("category/100/{$category->imagen}");
+            unlink("category/512/{$category->imagen}");
+            unlink("category/1280/{$category->imagen}");
+            $image = $request->file('image');
+            $image_name = $category->name . '.' . $image->getClientOriginalExtension();
+            $destination_path = public_path("category/100");
+
+            if (!file_exists($destination_path)) {
+                mkdir($destination_path, 0775, true);
+            }
+
+            $resize_image = Image::make($image->getRealPath());
+            $resize_image->resize(100, 100, function($constrained) {
+                $constrained->aspectRatio();
+            })->save($destination_path . '/' . $image_name);
+            $destination_path = public_path("category/512");
+
+            if (!file_exists($destination_path)) {
+                mkdir($destination_path, 0775, true);
+            }
+
+            $resize_image = Image::make($image->getRealPath());
+            $resize_image->resize(512, 512, function($constrained) {
+                $constrained->aspectRatio();
+            })->save($destination_path . '/' . $image_name);
+            $destination_path = public_path("category/1280");
+
+            if (!file_exists($destination_path)) {
+                mkdir($destination_path, 0775, true);
+            }
+
+            $resize_image = Image::make($image->getRealPath());
+            $resize_image->resize(1280, 1280, function($constrained) {
+                $constrained->aspectRatio();
+            })->save($destination_path . '/' . $image_name);
+
+            $category->update([
+                'imagen' => $image_name,
+            ]);
+        }
     }
 
     /**
@@ -142,7 +188,7 @@ class CategoryController extends Controller
     {
         $category->delete();
         unlink("category/100/{$category->imagen}");
-        unlink("category/150/{$category->imagen}");
+        unlink("category/512/{$category->imagen}");
         unlink("category/1280/{$category->imagen}");
     }
 }

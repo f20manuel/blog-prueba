@@ -1,27 +1,21 @@
 import React,{ useState, useEffect } from 'react'
 import MainAdmin from '../../../../components/MainAdmin'
 import Head from 'next/head'
-import { links } from '../../../../enviroment'
+import { links, root_url } from '../../../../enviroment'
 import { Image, Popup, Card, Header, Form, Button } from 'semantic-ui-react'
 import { urlObjectKeys } from 'next/dist/next-server/lib/utils'
 import Axios from 'axios'
 import { api, headersWithTokenAndFormData } from '../../../../helpers'
+import Router  from 'next/router'
 
 export default function index() {
-    const [token, setToken] = useState('')
 
     const [loading, setLoading] = useState(false)
     const [diabledButton, setDisabledButton] = useState(true)
 
-    useEffect(() => {
-        const token = localStorage.getItem('accessToken')
-        setToken(token)
-        if (!token) return window.location.replace('/login')
-    }, [])
-
     const [image, setImage] = useState(null);
 
-    const [imageURL, setImageURL] = useState('https://via.placeholder.com/1024')
+    const [imageURL, setImageURL] = useState('https://via.placeholder.com/1280')
 
     const [data, setData] = useState({
         name: '',
@@ -47,8 +41,8 @@ export default function index() {
     const handleChangeData = event => {
         setDisabledButton(false)
         if (event.target.name === 'name') {
-            const value = '/blog-admin/categorias/' + event.target.value
-            setSlug(value.replace(' ', '-').toLowerCase())
+            const value = root_url + '/categorias/' + event.target.value
+            setSlug(value.replace(/ /g, '-').toLowerCase())
         }
 
         setData({
@@ -59,6 +53,7 @@ export default function index() {
 
     const sendData = () => {
         setLoading(true)
+        const token = localStorage.getItem('accessToken')
 
         const newFormData = new FormData()
         newFormData.append('image', image)
@@ -78,7 +73,7 @@ export default function index() {
             // console.log(response)
             setLoading(false)
             alert('Categoría ' + data.name + ' agregada con éxito')
-            window.location.replace('/blog-admin/categorias')
+            Router.replace('/blog-admin/categorias')
         }).catch(error => {
             setLoading(false)
             console.log(error)

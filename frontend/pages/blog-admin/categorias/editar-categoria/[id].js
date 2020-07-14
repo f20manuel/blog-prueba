@@ -1,27 +1,45 @@
-import React,{ useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
+import React,{ useState, useEffect, useCallback } from 'react'
+import Router, { useRouter } from 'next/router'
 import MainAdmin from '../../../../components/MainAdmin'
 import Head from 'next/head'
-import { links } from '../../../../enviroment'
+import { links, root_url } from '../../../../enviroment'
 import { Image, Popup, Card, Header, Form, Button, Placeholder } from 'semantic-ui-react'
 import { urlObjectKeys } from 'next/dist/next-server/lib/utils'
 import Axios from 'axios'
-import { api, headersWithTokenAndFormData, public_path } from '../../../../helpers'
+import { api, public_path } from '../../../../helpers'
 
-export default function index() {
+function index() {
     const router = useRouter()
-    
-    const [token, setToken] = useState('')
+    const { id } = router.query
 
-    const [loading, setLoading] = useState(false)
+    const [category, setCategory] = useState({})
 
-    const [category, setCategory] = useState('')
+    const getCategory = useCallback(
+        async (id) => {
+            const token = localStorage.getItem('accessToken')
+
+            await Axios.get(api('categories/' + id + '/edit'), {
+                headers: {
+                    'Authorization': 'Bearer '+ token
+                }
+            }).then(response => {
+                const getData = response.data.category
+                setCategory(getData)
+                setData(getData)
+                setSlug(getData.slug)
+                setImageURL(public_path('category/512/' + getData.imagen))
+            }).catch(errors => console.log('getCategoryErrors:', errors))
+        },
+        [],
+    )
 
     useEffect(() => {
-        const token = localStorage.getItem('accessToken')
-        setToken(token)
-        if (!token) return window.location.replace('/login')
-    }, [])
+        getCategory(id)
+    }, [id])
+
+    const [disabledButton, setDisabledButton] = useState(true)
+
+    const [loading, setLoading] = useState(false)
 
     const [image, setImage] = useState(null);
 
@@ -32,6 +50,8 @@ export default function index() {
         description: '',
     })
 
+    const [slug, setSlug] = useState('')
+
     const [breadcrumbs, setBreadcrumbs] = useState([
         { key: 'escritorio', content: 'Escritorio', href: '/blog-admin'},
         { key: 'categorias', content: 'Categorías', href: '/blog-admin/categorias'},
@@ -39,6 +59,7 @@ export default function index() {
     ])
 
     const handleImage = event => {
+        setDisabledButton(false)
         const imagen = event.target.files[0]
 
         setImage(imagen)
@@ -46,23 +67,32 @@ export default function index() {
     }
 
     const handleChangeData = event => {
+        setDisabledButton(false)
+        if (event.target.name === 'name') {
+            const value = root_url + '/categorias/' + event.target.value
+            setSlug(value.replace(/ /g, '-').toLowerCase())
+        }
+
         setData({
             ...data,
             [event.target.name]: event.target.value
         })
     }
 
-    const sendData = () => {
+    const sendData = (id) => {
         setLoading(true)
+        const token = localStorage.getItem('accessToken')
 
         const newFormData = new FormData()
-        newFormData.append('image', image, image.filename)
+        newFormData.append('image', image)
         newFormData.append('name', data.name)
+        newFormData.append('slug', slug)
         newFormData.append('description', data.description)
+        newFormData.append('_method', 'PATCH')
 
         console.log(newFormData)
 
-        Axios.post(api('categories'), newFormData, {
+        Axios.post(api('categories/' + id), newFormData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 'Accept': 'application/json',
@@ -71,7 +101,7 @@ export default function index() {
         }).then(response => {
             // console.log(response)
             setLoading(false)
-            alert('Categoría ' + data.name + ' agregada con éxito')
+            alert('Categoría ' + data.name + ' actualizada con éxito')
             window.location.replace('/blog-admin/categorias')
         }).catch(error => {
             setLoading(false)
@@ -85,32 +115,6 @@ export default function index() {
         })
     }
 
-    //placeholders
-    const placeholderImage = () => {
-        
-
-        if (category.imagen) {
-            setImageURL(public_path('category/100/' + category.imagen))
-            return (
-                <Popup content='Haga click para subir una imágen' trigger={
-                    <Image
-                        src={imageURL}
-                        as='a'
-                        size='medium'
-                        rounded
-                        href={void(0)}
-                    />
-                }/>
-            )
-        }
-
-        return (
-            <Placeholder style={{widht: 300, height: 300}}>
-                <Placeholder.Image/>
-            </Placeholder>
-        )
-    }
-
     return (
         <>
             <Head>
@@ -120,11 +124,19 @@ export default function index() {
                     <link key={index} rel="stylesheet" href={link.url} />
                 ))}
             </Head>
-            <MainAdmin currentPage="Nueva categoría" breadcrumbs={breadcrumbs}>
+            <MainAdmin currentPage="Editar categoría" breadcrumbs={breadcrumbs}>
                 <div className="row mx-0">
                     <div className="col-md-4">
                         <label htmlFor="input-image">
-                            {placeholderImage()}
+                            <Popup content='Haga click para subir una imágen' trigger={
+                                <Image
+                                    src={imageURL}
+                                    as='a'
+                                    size='medium'
+                                    rounded
+                                    href={void(0)}
+                                />
+                            }/>
                         </label>
                         <input
                             type="file"
@@ -147,7 +159,8 @@ export default function index() {
                                         <Button
                                             primary
                                             loading={loading}
-                                            onClick={() => sendData()}
+                                            disabled={disabledButton}
+                                            onClick={() => sendData(category.id)}
                                         >
                                             Actualizar
                                         </Button>
@@ -171,6 +184,19 @@ export default function index() {
                                         />
                                     </Form.Field>
                                     <Form.Field>
+                                        <label htmlFor="slug">
+                                            Slug:
+                                        </label>
+                                        <input
+                                            value={slug}
+                                            type="text"
+                                            id="slug"
+                                            name="slug"
+                                            required
+                                            onChange={(event) => setSlug(event.target.value)}
+                                        />
+                                    </Form.Field>
+                                    <Form.Field>
                                         <label htmlFor="description">
                                             Descripción (opcional):
                                         </label>
@@ -191,3 +217,19 @@ export default function index() {
         </>
     )
 }
+
+// index.getInitialProps = async function () {
+//     const router = useRouter()
+//     const { id } = router.query
+//     const res = await Axios.get(api('categories/' + id + '/edit'), {
+//         headers: {
+//             'Authorization': 'Bearer ' + token
+//         }
+//     })
+
+//     const data = await res.data
+
+//     return { category: data }
+// }
+
+export default index

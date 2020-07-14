@@ -6,13 +6,32 @@ import { Image, Popup, Card, Header, Form, Button, Input, Select } from 'semanti
 import { urlObjectKeys } from 'next/dist/next-server/lib/utils'
 import Axios from 'axios'
 import { api, headersWithTokenAndFormData, public_path } from '../../../../helpers'
+import Router, { useRouter } from 'next/router'
 
 //text rich editor
 import { Editor } from '@tinymce/tinymce-react';
 
 export default function index() {
-    const [loading, setLoading] = useState(false)
-    const [diabledButton, setDisabledButton] = useState(true)
+    const router = useRouter()
+    const { id } = router.query
+
+    const [post, setPost] = useState({})
+
+    const getPost = useCallback(async (id) => {
+        const token = localStorage.getItem('accessToken')
+
+        await Axios.get(api('posts/' + id + '/edit'), {
+            headers: {
+                'Authorization': 'Bearer '+ token
+            }
+        }).then(response => {
+            const getData = response.data.post
+            setPost(getData)
+            setData(getData)
+            setSlug(getData.slug)
+            setImageURL(public_path('post/512/' + getData.image))
+        }).catch(errors => console.log('getPostErrors:', errors))
+    }, [])
 
     const [categories, setCategories] = useState([])
 
@@ -25,38 +44,38 @@ export default function index() {
             }
         }).then(response => {
             const cats = []
-            response.data.categories.map((category, index) => {
+            response.data.categories.map((post, index) => {
                 cats.push({
                     key: index,
-                    value: category.id,
-                    text: category.name
+                    value: post.id,
+                    text: post.name
                 })
             })
             setCategories(cats)
         }).catch(errors => console.log(errors))
     }, [])
+    
 
     useEffect(() => {
+        if (id) getPost(id)
         getCategories()
-    }, [])
+    }, [id])
+
+    const [loading, setLoading] = useState(false)
+    const [diabledButton, setDisabledButton] = useState(true)
 
     const [image, setImage] = useState(null);
 
     const [imageURL, setImageURL] = useState('https://via.placeholder.com/1280')
 
-    const [data, setData] = useState({
-        title: '',
-        category_id: '',
-        description: '',
-        content: '',
-    })
+    const [data, setData] = useState({})
 
     //editor values
-    const handleEditorChange = (e) => {
+    const handleEditorChange = (event) => {
         setDisabledButton(false)
         setData({
             ...data,
-            content: e.target.getContent()
+            content: event.target.getContent()
         })
     }
 
@@ -65,7 +84,7 @@ export default function index() {
     const [breadcrumbs, setBreadcrumbs] = useState([
         { key: 'escritorio', content: 'Escritorio', href: '/blog-admin'},
         { key: 'articulos', content: 'Articulos', href: '/blog-admin/articulos'},
-        { key: 'nuevoArticulo', content: 'Nuevo articulo', active: true},
+        { key: 'editarArticulo', content: 'Editar articulo', active: true},
     ])
 
     const handleImage = event => {
@@ -89,7 +108,7 @@ export default function index() {
         })
     }
 
-    const sendData = () => {
+    const sendData = (id) => {
         setLoading(true)
         const token = localStorage.getItem('accessToken')
 
@@ -98,10 +117,11 @@ export default function index() {
         newFormData.append('title', data.title)
         newFormData.append('category_id', data.category_id)
         newFormData.append('slug', slug)
-        newFormData.append('description', data.description)
+        newFormData.append('shortDescription', data.shortDescription)
         newFormData.append('content', data.content)
+        newFormData.append('_method', 'PATCH')
 
-        Axios.post(api('posts'), newFormData, {
+        Axios.post(api('posts/' + id), newFormData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 'Accept': 'application/json',
@@ -109,8 +129,8 @@ export default function index() {
             }
         }).then(response => {
             setLoading(false)
-            alert('Artículo ' + data.title + ' agregado con éxito')
-            window.location.replace('/blog-admin/articulos')
+            alert('Artículo ' + data.title + ' editado con éxito')
+            Router.replace('/blog-admin/articulos')
         }).catch(error => {
             setLoading(false)
             console.log(error)
@@ -160,7 +180,7 @@ export default function index() {
                                 <div className="d-flex justify-content-between align-items-center">
                                     <div>
                                         <Header as="h2">
-                                            Datos para el nuevo artículo
+                                            Datos del articulo {post.title}
                                         </Header>
                                     </div>
                                     <div>
@@ -168,9 +188,9 @@ export default function index() {
                                             primary="true"
                                             loading={loading}
                                             disabled={diabledButton}
-                                            onClick={() => sendData()}
+                                            onClick={() => sendData(post.id)}
                                         >
-                                            Guardar
+                                            Actualizar
                                         </Button>
                                     </div>
                                 </div>
@@ -201,10 +221,11 @@ export default function index() {
                                                 </label>
                                                 <Select
                                                     id="categories"
-                                                    name="category_id"
+                                                    name="post_id"
+                                                    value={data.category_id}
                                                     placeholder={categories?'Selecciona una categoría':'Loading...'}
                                                     options={categories}
-                                                    onChange={(e, {value}) => setData({...data, category_id: value})}
+                                                    onChange={(event, {value}) => setData({...data, category_id: value})}
                                                 />
                                             </Form.Field>
                                         </div>
@@ -228,15 +249,15 @@ export default function index() {
                                         </label>
                                         <textarea
                                             rows={2}
-                                            value={data.description}
+                                            value={data.shortDescription}
                                             placeholder="Describa brevemente aquí su artículo"
                                             id="description"
-                                            name="description"
+                                            name="shortDescription"
                                             onChange={event => handleChangeData(event)}
                                         />
                                     </Form.Field>
                                     <Editor
-                                        initialValue=""
+                                        initialValue={data.content}
                                         init={{
                                         height: 500,
                                         menubar: false,
